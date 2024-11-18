@@ -1,58 +1,81 @@
 import re
 
 
-def find_in_file(name_file: str, pattern_zero: any) -> None:
+def find_in_file(name_file: str) -> bool:
+    pattern: str = r'UTC([+-])(\d?\d)(:(00|30|45))?'  # регулярное выражение
+
     try:
         with open(name_file, 'r', encoding='utf-8') as file:
             text: str = file.read()
+
     except FileNotFoundError:
         print("Мы не можем получить доступ к файлу.")
+        return False
+
     else:
-        matches: list = re.findall(pattern_zero, text)
+        matches: list = re.findall(pattern, text)
         result: list[str] = []
         for match in matches:
-            # match[0] - часы, match[3] - минуты (если есть)
-            time_str: str = f"UTC{match[0]}"
-            if match[2]:  # Если минуты найдены
-                time_str += f":{match[2]}"
-            result.append(time_str)  # Формируем список совпадений в нужном формате
+            hours = int(match[1])  # Преобразуем часы в целое число
+            # Проверяем, что часы находятся в диапазоне от 0 до 12
+            if 0 <= hours <= 12:
+                time_str: str = f"UTC{match[0]}{match[1]}"  # match[0] - знак, match[1] - часы
 
+                if match[3]:  # Если минуты найдены
+                    # Проверяем, что минуты равны 00, 30 или 45
+                    if match[3] in ['00', '30', '45']:
+                        time_str += f"{match[2]}"
+                        result.append(time_str)
+                else:
+                    result.append(time_str)  # Если минут нет, добавляем только часы
+
+        if not result:
+            print("Здесь нет корректного обозначения")
+            return False
         print(result)
+        return True
 
 
-def checking_the_input(entry: str, pattern_zero: any) -> None:
-    matches: list = re.findall(pattern_zero, entry)
+def checking_the_input(entry: str) -> list[str] | None:
+    pattern: str = r'UTC([+-])(\d?\d)(:(00|30|45))?'  # регулярное выражение
+
+    matches: list = re.findall(pattern, entry)
+    print(matches)  # Для отладки
     result: list[str] = []
 
     for match in matches:
-        # match[0] - часы, match[2] - минуты (если есть)
-        time_str: str = f"UTC{match[0]}"
+        # Проверяем, что часы находятся в диапазоне от 1 до 12
+        if '0' <= match[1] <= '12':
+            time_str: str = f"UTC{match[0]}{match[1]}"  # match[0] - знак, match[1] - часы
 
-        if match[2]:  # Если минуты найдены
-            time_str += f":{match[2]}"
-
-        # Добавляем только если минуты равны 00, 30 или 45
-        if match[2] in ['00', '30', '45', '']:
-            result.append(time_str)
+            if match[3]:  # Если минуты найдены
+                # Проверяем, что минуты равны 00, 30 или 45
+                if match[3] in ['00', '30', '45']:
+                    time_str += f"{match[2]}"
+                    result.append(time_str)
+                else:
+                    break
+            else:
+                result.append(time_str)  # Если минут нет, добавляем только часы
 
     if not result:
         print("Здесь нет корректного обозначения")
+        return None
     else:
         print(result)
+        return result
 
 
 if __name__ == "__main__":
-    pattern: str = r'UTC[+-](0|1[0-2]|[1-9])(:([0]{2}|30|45))?'
-
     while True:
         choice: str = input("Если хотите провести поиск в файле, то введите 1. "
                             "Если хотите ввести в ручную, то введите 2. Выход - 3: ")
         if choice == "1":
-            find_in_file('Article_about_UTC.txt', pattern)
+            find_in_file('Article_about_UTC.txt')
 
         elif choice == "2":
             line: str = input("Введите текст: ")
-            checking_the_input(line, pattern)
+            checking_the_input(line)
 
         elif choice == "3":
             break
